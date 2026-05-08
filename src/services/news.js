@@ -3,6 +3,8 @@ import axios from 'axios';
 const CACHE_KEY = 'news_cache';
 const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
 
+// Spaceflight News API - Free, HTTPS, no API key needed
+// https://api.spaceflightnewsapi.net/v4/docs/
 export const getNews = async (forceRefresh = false) => {
   if (!forceRefresh) {
     const cached = localStorage.getItem(CACHE_KEY);
@@ -14,17 +16,23 @@ export const getNews = async (forceRefresh = false) => {
     }
   }
 
-  const apiKey = import.meta.env.VITE_NEWS_API_KEY;
-  if (!apiKey) {
-    throw new Error('News API Key is missing. Please set VITE_NEWS_API_KEY in .env');
-  }
-
   try {
-    // Note: Free tier only works on localhost, might fail on production/Vercel
-    const response = await axios.get(`https://newsapi.org/v2/top-headlines?category=technology&language=en&pageSize=10&apiKey=${apiKey}`);
+    const response = await axios.get('https://api.spaceflightnewsapi.net/v4/articles?limit=12');
     
-    if (response.data && response.data.articles) {
-      const articles = response.data.articles.filter(a => a.title && a.title !== '[Removed]');
+    if (response.data && response.data.results) {
+      // Map Spaceflight News API format to our app's expected format
+      const articles = response.data.results.map(article => ({
+        title: article.title,
+        description: article.summary,
+        url: article.url,
+        urlToImage: article.image_url,
+        publishedAt: article.published_at,
+        author: article.authors?.[0]?.name || article.news_site,
+        source: {
+          name: article.news_site
+        }
+      }));
+
       localStorage.setItem(CACHE_KEY, JSON.stringify({
         data: articles,
         timestamp: Date.now()

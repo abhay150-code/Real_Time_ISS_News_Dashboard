@@ -1,28 +1,33 @@
 import axios from 'axios';
 
-// ISS API (No auth required)
+// ISS Position API - Free, HTTPS, no API key needed
+// https://wheretheiss.at/w/developer
 export const getISSPosition = async () => {
   try {
-    const apiKey = import.meta.env.VITE_N2YO_API_KEY;
-    const response = await axios.get(`/api/n2yo/rest/v1/satellite/positions/25544/18.5204/73.8567/0/2/&apiKey=${"6FHUEL-MJKRRZ-8SJK6Z-5QL4"}`);
+    const response = await axios.get('https://api.wheretheiss.at/v1/satellites/25544');
     
-    const position = response.data.positions[0];
     return {
       iss_position: {
-        latitude: position.satlatitude,
-        longitude: position.satlongitude
+        latitude: response.data.latitude,
+        longitude: response.data.longitude
       },
-      timestamp: position.timestamp
+      timestamp: response.data.timestamp
     };
   } catch (error) {
-    console.error('N2YO API failed:', error);
+    console.error('Where The ISS At API failed:', error);
     throw error;
   }
 };
 
+// Astronauts API - Free, HTTPS, no API key needed
 export const getAstronauts = async () => {
-  const response = await axios.get('http://api.open-notify.org/astros.json');
-  return response.data;
+  const response = await axios.get('https://corquaid.github.io/international-space-station-APIs/JSON/people-in-space.json');
+  return {
+    people: response.data.people.map(person => ({
+      name: person.name,
+      craft: person.iss ? 'ISS' : person.spacecraft
+    }))
+  };
 };
 
 // Reverse Geocoding (Free BigDataCloud API)
